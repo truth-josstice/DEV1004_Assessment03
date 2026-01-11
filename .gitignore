@@ -1,0 +1,19 @@
+# Docker/CI files
+.env
+.env.local
+docker-compose.override.yml
+*.tar.gz
+
+# IDE files
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Miscellaneous Files
+project_structure_docs/
