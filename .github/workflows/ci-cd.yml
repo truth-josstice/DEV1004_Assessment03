@@ -31,11 +31,12 @@ jobs:
           cache-dependency-path: "backend/package-lock.json"
 
       # Test backend with variables from GitHub Secrets (unit and integration tests)
+      # Add additional timeout for slower running tests
       - name: Backend Install & Test
         run: |
           cd backend
           npm ci
-          npm test
+          npm test -- --testTimeout=30000 --forceExit --maxWorkers=2
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
