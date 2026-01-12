@@ -43,6 +43,8 @@ jobs:
           npm ci
 
       - name: Run Core Tests (Fast and Reliable)
+        env:
+          NODE_OPTIONS: "--experimental-vm-modules --no-warnings=ExperimentalWarning"
         run: |
           cd backend
           echo "Running tests with env: NODE_ENV=$NODE_ENV"
