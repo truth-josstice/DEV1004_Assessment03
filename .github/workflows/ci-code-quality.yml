@@ -1,0 +1,53 @@
+name: Code Quality
+on: 
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "**/*.js"
+      - "**/*.jsx"
+      - "**/*.json"
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Setup Node.js environment for the backend
+      - name: Backend Node.js Setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "backend/package-lock.json"
+
+      # Install backend dependencies
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm ci
+        
+      # Run linter with local ruleset
+      - name: Backend ESLint Quality Check
+        run: npm run lint -- --max-warnings 0 --format=stylish
+
+      # Setup Node.js environment for frontend
+      - name: Frontend Node.js Setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+      
+      # Install frontend dependencies
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      # Run linter with local ruleset
+      - name: Frontend ESLint Quality Check
+        run: npm run lint -- --max-warnings 0 --format=stylish
+          
