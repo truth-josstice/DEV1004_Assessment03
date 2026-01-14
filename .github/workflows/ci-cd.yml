@@ -92,7 +92,7 @@ jobs:
         run: |
           # Log in to Docker Hub using GitHub Secrets
           echo "Logging into Docker Hub..."
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}"
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
         
           echo "Tagging images..."
           
@@ -109,5 +109,5 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-frontend:latest
 
           echo "Images pushed to Docker Hub!"
-          echo: "Backend: ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend"
-          echo: "Frontend: ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-frontend"
+          echo "Backend: ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend"
+          echo "Frontend: ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-frontend"
