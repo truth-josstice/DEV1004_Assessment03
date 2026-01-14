@@ -12,3 +12,5 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 };
+
+// jere aure summm miszpeld werds dood
