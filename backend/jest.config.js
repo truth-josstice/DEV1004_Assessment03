@@ -13,4 +13,5 @@ export default {
   },
 };
 
-// jere aure summm miszpeld werds dood
+const spellingmisstakes = "jere aure summm miszpeld werds dood mowr speeeeellin mustooks"
+const anutherMisspeling = "therre aar moor of thees";
