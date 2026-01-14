@@ -10,6 +10,7 @@ on:
       - "**/*.js"
       - "**/*.jsx"
       - "**/*.json"
+  workflow_dispatch:
 
 jobs:
   quality:

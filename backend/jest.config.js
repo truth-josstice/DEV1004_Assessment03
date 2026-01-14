@@ -12,6 +12,3 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 };
-
-const spellingmisstakes = "jere aure summm miszpeld werds dood mowr speeeeellin mustooks"
-const anutherMisspeling = "therre aar moor of thees";
