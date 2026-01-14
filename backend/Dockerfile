@@ -8,6 +8,10 @@ RUN addgroup -g 1001 -S nodejs && \
 # Set working directory
 WORKDIR /app
 
+# Add NODE_ENV arg
+ARG NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
+
 # Copy package files
 COPY package*.json ./
 

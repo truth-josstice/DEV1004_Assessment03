@@ -85,3 +85,29 @@ jobs:
       # Verify images were built successfully
       - name: Verify Docker Images
         run: docker images
+
+      # Push images to DockerHub
+      - name: Push to Docker Hub
+        if: github.event_name == 'push' && github.reg == 'refs/head/main'
+        run: |
+          # Log in to Docker Hub using GitHub Secrets
+          echo "Logging into Docker Hub..."
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}"
+        
+          echo "Tagging images..."
+          
+          # Tag with sha and latest (SHA last forever, latest is overwritten)
+          docker tag backend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend:${{ github.sha }}
+          docker tag backend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend:latest
+          docker tag frontend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-frontend:${{ github.sha }}
+          docker tag frontend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-frontend:latest
+          
+          echo "Pushing images to Docker Hub..."
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-frontend:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-frontend:latest
+
+          echo "Images pushed to Docker Hub!"
+          echo: "Backend: ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend"
+          echo: "Frontend: ${{ secrets.DOCKERHUB_USERNAME }}/dev1004-frontend"

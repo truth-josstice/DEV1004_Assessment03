@@ -2,6 +2,7 @@
 # Backend: Node.js API connecting to MongoDB Atlas
 # Frontend: React SPA served via Nginx
 # Communication: Internal Docker network (backend:3000)
+name: Century Screening Room & Reel Canon Compose Stack
 
 # All services (containers) included in the multi-container composition
 services:
