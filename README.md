@@ -41,7 +41,7 @@ architecture-beta
 ```
 
 ### **1.1: Frontend Container**
-<!-- React & Nginx (serves static files, proxies all API requests) -->
+
 The frontend container consists of a SPA created with `React`, built with `Vite`, and served with `Nginx`. Nginx serves all of the static html, css, assets from the `./dist/` folder, and uses a proxy for all API requests. Using Nginx as an in-built web server ensures the image size remains manageable, and gives users a more reliable experience when using the container.
 
 Nginx needs to be configured to work with the React SPA. Based on the config below, nginx will serve `index.html` for all non API-routes, enabling navigation without server-side route definitions. I will discuss the proxy settings in section 1.4:
@@ -68,11 +68,11 @@ Nginx needs to be configured to work with the React SPA. Based on the config bel
 The backend container uses Express as the application server, with Node.js 22 Alpine providing the runtime. Using Alpine has benefits including: smaller image size, added security and faster deployment.  Express handles the business logic, and communicates with the database. This abstracts the complex logic for greater control, functional design ensuring frontend is skinny, and added security when communicating with MongoDB.
 
 ### **1.3: MongoDB Atlas**
-<!-- External cloud DB, smaller image size, db is protected -->
+
 The database in this system is external through MongoDB Cloud Atlas. This provides greater security, as well as ensuring a smaller image size. NoSQL databases can have large file sizes (binary for image files), keeping them as external services provides a much more manageable image size.
 
 ### **1.4: Docker Compose Network & Nginx Configuration**
-<!-- port mappings, nginx proxy config go here -->
+
 Docker compose creates an internal DNS network by connecting two or more images. The frontend container is mapped to port 80, with Nginx acting as both a static web-serve and, a reverse proxy for API requests to `backend:3000`. This proxy configuration avoids CORS issues by explicitly keeping calls within the same origin from the browser's perspective. Docker compose creates a network bridge via Docker's internal DNS (`app-network`) enabling internal service discovery, allowing the exposed port of `backend:3000` to be resolved by the frontend. Use of Docker's bridge network keeps the project fully portable, as it does not rely on hardcoded IP addresses.
 
 _**Figure 2:** Full-stack container architecture showing component relationships_
@@ -124,7 +124,7 @@ flowchart TD
 The backend container uses a single stage build, as Node.js is required for the runtime. In comparison, the frontend uses multi stage builds, where build dependencies (Node, npm) can be discarded after the build phase whilst Nginx runs a lightweight runtime.
 
 ### **2.2: User Security:**
-<!-- discuss the non-root users and what thsi does for security -->
+
 For greater security, the backend container creates a new non-root user group (1001) and adds a "nodejs" user. This helps provide a barrier against access to the host file system, and ensures all privileged actions cannot be exploited from users from within the image.
 
 ### **2.3: Health Checks**
