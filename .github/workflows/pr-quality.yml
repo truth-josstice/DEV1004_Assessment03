@@ -1,0 +1,59 @@
+# Code Quality Workflow
+name: Pull Request Code Quality (Automatic)
+
+# Only occurs on pull requests where files with stated path/extensions have been changed
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "**/*.js"
+      - "**/*.jsx"
+      - "**/*.json"
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    # Reads contents, writes to the PR (inline comments)
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Implement custom Node.js setup action
+      - name: Setup Backend
+        uses: ./.github/actions/setup-env
+        with:
+          directory: backend
+
+      # Run linter with local ruleset
+      - name: Backend ESLint Quality Check
+        run: |
+          cd backend
+          npm run lint -- --max-warnings 0 --format=stylish
+
+      # Implement custom Node.js setup action
+      - name: Setup Frontend
+        uses: ./.github/actions/setup-env
+        with:
+          directory: frontend
+
+      # Run linter with local ruleset
+      - name: Frontend ESLint Quality Check
+        run: |
+          cd frontend
+          npm run lint -- --max-warnings 0 --format=stylish
+
+      # Australian English Spell Check
+      - name: Spell Check with PR Comments
+        uses: reviewdog/action-misspell@v1.27.0
+        with:
+          locale: "US"
+          level: "warning"
+          reporter: "github-pr-review"
+          filter_mode: "added"
+          exclude: "node_modules,dist,*.min.js,*.svg,*.png,*.jpg"
