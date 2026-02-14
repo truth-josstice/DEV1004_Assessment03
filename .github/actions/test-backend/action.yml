@@ -53,3 +53,11 @@ runs:
           backend/test-results/
           backend/coverage/
         retention-days: 30
+
+    - name: Test Summary
+      shell: bash
+      if: always()
+      run: |
+        echo "## Backend Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Artifacts uploaded with 30 day retention" >> $GITHUB_STEP_SUMMARY
