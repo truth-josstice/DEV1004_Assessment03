@@ -9,9 +9,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Create Results Directory
-      shell: bash
-      run: mkdir -p backend/test-results backend/coverage
 
     - name: Run Standard Tests
       shell: bash
@@ -20,6 +17,7 @@ runs:
           cd backend
           export NODE_ENV=test
           export NODE_OPTIONS='--experimental-vm-modules --no-warnings=ExperimentalWarning'
+          mkdir -p test-results
           npx jest --testPathIgnorePatterns="src/__tests__/setup/|server.test.js" \
           --json --outputFile=test-results/standard-results.json \
           --testTimeout=30000 --silent 2>&1 | tee test-results/standard-output.log
@@ -32,6 +30,7 @@ runs:
         cd backend
         export NODE_ENV=test
         export NODE_OPTIONS='--experimental-vm-modules --no-warnings=ExperimentalWarning'
+        mkdir -p test-results
         npx jest server.test.js \
         --json --outputFile=test-results/integration-results.json \
         --testTimeout=60000 --silent --forceExit 2>&1 | tee test-results/integration-output.log
@@ -43,7 +42,8 @@ runs:
       run: |
         cd backend
         export NODE_ENV=test
-        export NODE_OPTIONS='--experimental-vm-modules --no-warnings=ExperimentalWarning'        
+        export NODE_OPTIONS='--experimental-vm-modules --no-warnings=ExperimentalWarning'
+        mkdir -p test-results
         npx jest --coverage --coverageDirectory=coverage \
         --json --outputFile=test-results/coverage-results.json \
         --testTimeout=30000 --silent 2>&1 | tee test-results/coverage-output.log
