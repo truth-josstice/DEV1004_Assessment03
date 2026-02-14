@@ -1,0 +1,21 @@
+name: Setup Environment
+description: Sets up Node.js and installs dependencies with directory inputs
+inputs:
+  directory:
+    description: Directory where package-lock exists
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: ${{ inputs.directory }}/package-lock.json
+
+    - name: Install Dependencies
+      shell: bash
+      run: |
+        cd ${{ inputs.directory }}
+        npm ci
