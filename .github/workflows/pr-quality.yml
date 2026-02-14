@@ -1,5 +1,5 @@
 # Code Quality Workflow
-name: Pull Request Code Quality (Automatic)
+name: PR Code Quality
 
 # Only occurs on pull requests where files with stated path/extensions have been changed
 on:

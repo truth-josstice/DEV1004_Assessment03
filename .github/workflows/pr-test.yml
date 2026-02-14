@@ -1,0 +1,41 @@
+name: PR Test Suites
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/**'
+  workflow_dispatch:
+    inputs:
+      run-coverage: 
+        description: 'Run tests with coverage report?'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - uses: ./.github/actions/setup-env
+        with:
+          directory: backend
+
+      - uses: ./.github/actions/test-backend
+        with:
+          coverage: ${{ github.event.inputs.run-coverage == 'true' || 'false'}}
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/setup-env
+        with:
+          directory: frontend
+      
+      - uses: ./.github/actions/test-frontend
