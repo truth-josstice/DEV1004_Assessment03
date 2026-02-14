@@ -17,10 +17,11 @@ on:
 
 jobs:
   test-backend:
+    runs-on: ubuntu-latest
     env: 
       DATABASE_URI: ${{ secrets.DATABASE_URI }}
       JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-    runs-on: ubuntu-latest
+      TOKEN_HEADER_KEY: Authorization
     steps:
       - uses: actions/checkout@v6
       
