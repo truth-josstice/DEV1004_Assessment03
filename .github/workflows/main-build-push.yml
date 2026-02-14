@@ -1,0 +1,61 @@
+name: Build and Push Images
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".github/**"
+  schedule:
+    - cron: "0 2 * * 0"
+  workflow_dispatch:
+    inputs:
+      backend-tag:
+        description: "Manual backend tag (leave empty for automatic completion)"
+        required: false
+        type: string
+      frontend-tag:
+        description: "Manual frontend tag (leave empty for automatic completion)"
+        required: false
+        type: string
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate Version Tag
+        id: version
+        if: ${{ github.event.inputs.backend-tag == '' && github.event.inputs.frontend-tag == ''}}
+        uses: anothrNick/github-tag-action@1.75.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
+          TAG_PREFIX: v
+          RELEASE_BRANCHES: main
+
+      - name: Use Manual Tags
+        id: manual-tags
+        if: ${{ github.event.inputs.backend-tag != '' || github.event.inputs.frontend-tag != ''}}
+        run: |
+          TAG="${{ github.event.inputs.backend-tag || github.event.inputs.frontend-tag }}"
+          echo "new_tag=$TAG" >> $GITHUB_OUTPUT
+
+  build-and-push:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build and Push Images
+        uses: ./.github/actions/build-push-docker-images
+        with:
+          dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          backend-tag: ${{ needs.version.outputs.tag }}
+          frontend-tag: ${{ needs.version.outputs.tag }}

@@ -1,0 +1,31 @@
+name: Test Frontend
+description: Runs frontend tests with Vitest
+runs:
+  using: composite
+  steps:
+    - name: Create Results Directory
+      shell: bash
+      run: mkdir -p frontend/test-results
+
+    - name: Run Frontend Tests
+      shell: bash
+      continue-on-error: true
+      run: |
+        cd frontend
+        npx vitest run --reporter=json --outputFile=test-results/frontend-results.json 2>&1 | tee test-results/frontend-output.log
+
+    - name: Upload Frontend Results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: frontend-test-results-${{ github.sha }}
+        path: frontend/test-results/
+        retention-days: 30
+
+    - name: Test Summary
+      shell: bash
+      if: always()
+      run: |
+        echo "## Frontend Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Artifacts uploaded with 30 day retention" >> $GITHUB_STEP_SUMMARY
