@@ -9,6 +9,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Create Results Directory
+      shell: bash
+      run: mkdir -p backend/test-results backend/coverage
+
     - name: Run Standard Tests
       shell: bash
       continue-on-error: true
