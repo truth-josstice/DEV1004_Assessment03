@@ -17,6 +17,9 @@ on:
 
 jobs:
   test-backend:
+    env: 
+      DATABASE_URI: ${{ secrets.DATABASE_URI }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
