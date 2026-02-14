@@ -1,0 +1,58 @@
+name: Build and Push Docker Images
+description: Builds and pushes Docker images to Docker Hub with semantic versioning
+inputs:
+  dockerhub-username:
+    description: Docker Hub username
+    required: true
+  dockerhub-token:
+    description: Docker Hub token
+    required: true
+  backend-tag:
+    description: Backend image tag (semantic versions)
+    required: true
+  frontend-tag:
+    description: Frontend image tag (semantic versions)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Login to Docker Hub
+      shell: bash
+      run: echo "${{ inputs.dockerhub-token }}" | docker login -u "${{ inputs.dockerhub-username }}" --password-stdin
+
+    - name: Build Backend Image
+      shell: bash
+      run: |
+        cd backend
+        docker build -t backend:${{ inputs.backend-tag }} .
+        docker tag backend:${{ inputs.backend-tag }} ${{ inputs.dockerhub-username}}/dev1004-backend:${{ inputs.backend-tag }}
+        docker tag backend:${{ inputs.backend-tag }} ${{ inputs.dockerhub-username}}/dev1004-backend:latest
+
+    - name: Build Frontend Image
+      shell: bash
+      run: |
+        cd frontend
+        docker build -t frontend:${{ inputs.frontend-tag }} .
+        docker tag frontend:${{ inputs.frontend-tag }} ${{ inputs.dockerhub-username}}/dev1004-frontend:${{ inputs.frontend-tag }}
+        docker tag frontend:${{ inputs.frontend-tag }} ${{ inputs.dockerhub-username}}/dev1004-frontend:latest
+
+    - name: Push Backend Images
+      shell: bash
+      run: |
+        docker push ${{ inputs.dockerhub-username }}/dev1004-backend:${{ inputs.backend-tag }}
+        docker push ${{ inputs.dockerhub-username }}/dev1004-backend:latest
+
+    - name: Push Frontend Images
+      shell: bash
+      run: |
+        docker push ${{ inputs.dockerhub-username }}/dev1004-frontend:${{ inputs.frontend-tag }}
+        docker push ${{ inputs.dockerhub-username }}/dev1004-frontend:latest
+
+    - name: Docker Summary
+      if: always()
+      shell: bash
+      run: |
+        echo "## Docker Images Published" >> $GITHUB_STEP_SUMMARY
+        echo "- **Backend:** ${{ inputs.dockerhub-username }}/dev1004-backend:${{ inputs.backend-tag }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Frontend:** ${{ inputs.dockerhub-username }}/dev1004-frontend:${{ inputs.frontend-tag }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Latest tags also updated**" >> $GITHUB_STEP_SUMMARY
