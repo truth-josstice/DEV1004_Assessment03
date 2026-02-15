@@ -57,7 +57,7 @@ app.use(
 with different rate limit for general and login routes. */
 
 // Render will set env variables for HOST and PORT, will default to localhost:3000 in dev
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 3000;
 
 // Attach routes to the app
