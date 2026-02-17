@@ -70,16 +70,26 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
 
         # Deploys backend image to Cloud Run, outputs deployment revision names for revision history
+        # Retries 3 times with delay to account for transient failures
       - name: Deploy Backend to Cloud Run
         id: deploy-cloud-run
         run: |
-          gcloud run deploy dev1004-backend \
-            --image=${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend:${{ needs.get-version.outputs.tag }} \
-            --region=us-west1 \
-            --allow-unauthenticated \
-            --memory=256Mi \
-            --update-secrets="DATABASE_URI=DATABASE_URI:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest" \
-            --format='json' > deploy-output.json
+          for i in {1..3}; do
+            echo "Attempt $i: Deploying to Cloud Run..."
+            if gcloud run deploy dev1004-backend \
+              --image=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend:${{ needs.get-version.outputs.tag }} \
+              --region=us-west1 \
+              --allow-unauthenticated \
+              --memory=256Mi \
+              --update-secrets="DATABASE_URI=DATABASE_URI:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest" \
+              --format='json' > deploy-output.json; then
+              echo "Deployment successful!"
+              break
+            else
+              echo "Deployment failed, waiting 15 seconds before retry..."
+              sleep 15
+            fi
+          done
 
           REVISION=$(jq -r '.status.latestReadyRevisionName' deploy-output.json)
           echo "revision=$REVISION" >> $GITHUB_OUTPUT
