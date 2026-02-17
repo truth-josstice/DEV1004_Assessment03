@@ -154,23 +154,7 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: firebase deploy --only hosting --message "Deploy version ${{ needs.get-version.outputs.tag }}"
-
-      - name: Get Firebase Deployment History
-        working-directory: ./frontend
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: |
-          mkdir -p firebase-history
-          firebase hosting:versions:list --json --project the-century-screening-room > firebase-history/firebase-releases.json
-          firebase hosting:versions:list --project the-century-screening-room > firebase-history/firebase-releases.txt
-
-      - name: Upload Firebase History
-        uses: actions/upload-artifact@v6
-        with:
-          name: firebase-history-${{ needs.get-version.outputs.tag }}
-          path: frontend/firebase-history/
-          retention-days: 30
-        
+       
   verify-frontend:
     name: Verify Frontend Deployment
     needs: deploy-frontend
