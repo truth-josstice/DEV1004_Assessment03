@@ -35,7 +35,7 @@ jobs:
           coverage: ${{ github.event.inputs.run-coverage == 'true' || 'false'}}
 
   test-frontend:
-    name: PR Frontend Unit Tests
+    name: PR - Frontend Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
