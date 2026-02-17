@@ -138,13 +138,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-env
         with:
-          node-version: '22'
+          directory: ./frontend
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
 
       - name: Deploy Frontend to Firebase
         working-directory: ./frontend
