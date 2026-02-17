@@ -4,16 +4,12 @@ name: PR Code Quality
 # Only occurs on pull requests where files with stated path/extensions have been changed
 on:
   pull_request:
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - "**/*.js"
-      - "**/*.jsx"
-      - "**/*.json"
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   quality:
+    name: PR - Code Quality (ESLint + Spellcheck)
     runs-on: ubuntu-latest
     # Reads contents, writes to the PR (inline comments)
     permissions:
