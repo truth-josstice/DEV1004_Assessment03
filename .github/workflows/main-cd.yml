@@ -144,7 +144,7 @@ jobs:
           node-version: '22'
 
       - name: Install Firebase CLI
-        run: npm install firebase-tools
+        run: npm install -g firebase-tools
 
       - name: Deploy Frontend to Firebase
         working-directory: ./frontend
