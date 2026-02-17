@@ -161,8 +161,8 @@ jobs:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           mkdir -p firebase-history
-          firebase hosting:versions:list --json > firebase-history/firebase-releases.json
-          firebase hosting:versions:list > firebase-history/firebase-releases.txt
+          firebase hosting:versions:list --json --project the-century-screening-room > firebase-history/firebase-releases.json
+          firebase hosting:versions:list --project the-century-screening-room > firebase-history/firebase-releases.txt
 
       - name: Upload Firebase History
         uses: actions/upload-artifact@v6
