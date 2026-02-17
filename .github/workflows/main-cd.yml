@@ -78,7 +78,7 @@ jobs:
             --region=us-west1 \
             --allow-unauthenticated \
             --memory=256Mi \
-            --update-secrets="DATABASE_URI=DATABASE_URI:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest,TOKEN_HEADER_KEY=TOKEN_HEADER_KEY:latest" \
+            --update-secrets="DATABASE_URI=DATABASE_URI:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest \
             --format='json' > deploy-output.json
 
           REVISION=$(jq -r '.status.latestReadyRevisionName' deploy-output.json)
