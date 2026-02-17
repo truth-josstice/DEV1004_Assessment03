@@ -4,12 +4,7 @@ name: PR Code Quality
 # Only occurs on pull requests where files with stated path/extensions have been changed
 on:
   pull_request:
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - "**/*.js"
-      - "**/*.jsx"
-      - "**/*.json"
+    branches: [main]
   workflow_dispatch:
 
 jobs:
