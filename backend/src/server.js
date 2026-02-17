@@ -172,5 +172,3 @@ app.all(/.*/, (req, res) => {
 
 // Export everything needed to run server
 export { HOST, PORT, app, connectToDatabase, databaseURL };
-
-// testing the new workflow names with small change in comments on this file
