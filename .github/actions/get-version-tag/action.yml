@@ -1,0 +1,37 @@
+name: 'Get Version Tag'
+description: 'Retrieves version tag from CI workflow artifact'
+inputs:
+  github-token:
+    description: 'Github token for downloading artifacts'
+    required: true
+  run-id:
+    description: 'Workflow run ID for artifact download'
+    required: true
+
+outputs:
+  tag:
+    description: 'Semantic version Tag'
+    value: ${{ steps.read-tag.outputs.tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: 'Download version artifact'
+      uses: actions/download-artifact@v7
+      with:
+        name: version-tag
+        github-token: ${{ inputs.github-token }}
+        run-id: ${{ inputs.run-id }}
+
+    - name: Read version tag
+      id: read-tag
+      shell: bash
+      run: |
+        if [ -f version.txt ]; then
+          TAG=$(cat version.txt)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "### Version Tag: $TAG" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "Error: version.txt not found"
+          exit 1
+        fi

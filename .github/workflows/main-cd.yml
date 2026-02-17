@@ -1,0 +1,195 @@
+name: CD - Deploy to Production
+
+on:
+  # Set to run after build and images is completed
+  workflow_run:
+    workflows: ["Build and Push Images"]
+    types: [completed]
+    branches: [main]
+  # Set to run on manual trigger for rollbacks
+  workflow_dispatch:
+    inputs:
+      rollback-tag:
+        description: "Tag to rollback to"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  get-version:
+    name: CD - Deployment Version Tag
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    outputs:
+      tag: ${{ steps.final-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get Version Tag from CI
+        id: version
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: ./.github/actions/get-version-tag
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Use Rollback Tag
+        id: rollback
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "tag=${{ github.event.inputs.rollback-tag }}" >> $GITHUB_OUTPUT
+          echo "### Rolling back to version: ${{ github.event.inputs.rollback-tag }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Set Final Tag
+        id: final-tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag=${{ steps.rollback.outputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ steps.version.outputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+
+  deploy-backend:
+    name: Deploy Production Backend
+    needs: get-version
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      revision: ${{ steps.deploy-cloud-run.outputs.revision }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+        # Deploys backend image to Cloud Run, outputs deployment revision names for revision history
+      - name: Deploy Backend to Cloud Run
+        id: deploy-cloud-run
+        run: |
+          gcloud run deploy dev1004-backend \
+            --image=${{ secrets.DOCKERHUB_USERNAME }}/dev1004-backend:${{ needs.get-version.outputs.tag }} \
+            --region=us-west1 \
+            --allow-unauthenticated \
+            --memory=256Mi \
+            --set-env-vars="NODE_ENV=production,DATABASE_URI=${{ secrets.DATABASE_URI }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},TOKEN_HEADER_KEY=Authorization" \
+            --format='json' > deploy-output.json
+
+          REVISION=$(jq -r '.status.latestReadyRevisionName' deploy-output.json)
+          echo "revision=$REVISION" >> $GITHUB_OUTPUT
+
+      - name: Get Revision History
+        run: |
+          mkdir -p revision-history
+          gcloud run revisions list \
+            --service=dev1004-backend \
+            --region=us-west1 \
+            --format='json' > revision-history/history.json
+
+          gcloud run revisions list \
+            --service=dev1004-backend \
+            --region=us-west1 \
+            --format='table(name, status.conditions[0].status, createTime.date("%Y-%m-%d %H:%M"), age)' \
+            --limit=10 >revision-history/history.txt
+
+      - name: Upload Revision History
+        uses: actions/upload-artifact@v6
+        with:
+          name: revision-history-${{ needs.get-version.outputs.tag }}
+          path: revision-history/
+          retention-days: 30
+
+  verify-backend:
+    name: Verify Backend Deployment Status
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for deployment  
+        run:
+          sleep 10
+
+      - name: Verify Backend
+        run: |
+          BACKEND_URL="https://dev1004-backend-792536546710.us-west1.run.app/"
+          curl -f $BACKEND_URL || exit 1
+          echo "Backend verified. (revision: ${{ needs.deploy-backend.outputs.revision }})" >> $GITHUB_STEP_SUMMARY
+
+  deploy-frontend:
+    name: Deploy Production Frontend
+    needs: [get-version, verify-backend]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Firebase CLI
+        run: npm install firebase-tools
+
+      - name: Deploy Frontend to Firebase
+        working-directory: ./frontend
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only hosting --message "Deploy version ${{ needs.get-version.outputs.tag }}"
+
+      - name: Get Firebase Deployment History
+        working-directory: ./frontend
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          mkdir -p firebase-history
+          firebase hosting:versions:list --json > firebase-history/firebase-releases.json
+          firebase hosting:versions:list > firebase-history/firebase-releases.txt
+
+      - name: Upload Firebase History
+        uses: actions/upload-artifact@v6
+        with:
+          name: firebase-history-${{ needs.get-version.outputs.tag }}
+          path: frontend/firebase-history/
+          retention-days: 30
+        
+  verify-frontend:
+    name: Verify Frontend Deployment
+    needs: deploy-frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for deployment
+        run: sleep 10
+
+      - name: Verify Frontend
+        run: |
+          FRONTEND_URL="https://the-century-screening-room.web.app/"
+          curl -f $FRONTEND_URL || exit 1
+          echo "Frontend verified" >> $GITHUB_STEP_SUMMARY
+
+  deployment-summary:
+    name: Deployment Summary
+    needs: [get-version, deploy-backend, verify-backend, deploy-frontend, verify-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Save Deployment Logs
+        run: |
+          mkdir -p deployment-logs
+          echo "Version: ${{ needs.get-version.outputs.tag }}" > deployment-logs/version.txt
+          echo "Backend Revision: ${{ needs.deploy-backend.outputs.revision }}" >> deployment-logs/version.txt
+          echo "Timestamp: $(date)" >> deployment-logs/version.txt
+
+      - name: Upload Deployment Logs
+        uses: actions/upload-artifact@v6
+        with:
+          name: deployment-logs-${{ needs.get-version.outputs.tag }}
+          path: deployment-logs/
+      
+      - name: Workflow Summary
+        run: |
+          echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "Successfully deployed version ${{ needs.get-version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts Uploaded" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend revision history" >> $GITHUB_STEP_SUMMARY
+          echo "- Firebase deployment history" >> $GITHUB_STEP_SUMMARY
+          echo "- Deployment logs" >> $GITHUB_STEP_SUMMARY
