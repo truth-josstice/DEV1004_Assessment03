@@ -25,6 +25,7 @@ permissions:
 
 jobs:
   version:
+    name: Version Tagging
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.version.outputs.new_tag }}
@@ -51,6 +52,7 @@ jobs:
           echo "new_tag=$TAG" >> $GITHUB_OUTPUT
 
   build-and-push:
+    name: Build + Push to Docker Hub
     needs: version
     runs-on: ubuntu-latest
     steps:
@@ -63,3 +65,13 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
           backend-tag: ${{ needs.version.outputs.tag }}
           frontend-tag: ${{ needs.version.outputs.tag }}
+
+      - name: Save version tag
+        run: echo "${{ needs.version.outputs.tag }}" > version.txt
+
+      - name: Upload version artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: version-tag
+          path: version.txt
+          retention-days: 30

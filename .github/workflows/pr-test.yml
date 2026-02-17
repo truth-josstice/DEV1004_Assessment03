@@ -17,6 +17,7 @@ on:
 
 jobs:
   test-backend:
+    name: PR - Backend Unit Tests
     runs-on: ubuntu-latest
     env: 
       DATABASE_URI: ${{ secrets.DATABASE_URI }}
@@ -34,6 +35,7 @@ jobs:
           coverage: ${{ github.event.inputs.run-coverage == 'true' || 'false'}}
 
   test-frontend:
+    name: PR Frontend Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

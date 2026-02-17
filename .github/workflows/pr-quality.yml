@@ -14,6 +14,7 @@ on:
 
 jobs:
   quality:
+    name: PR - Code Quality (ESLint + Spellcheck)
     runs-on: ubuntu-latest
     # Reads contents, writes to the PR (inline comments)
     permissions:
