@@ -193,5 +193,4 @@ jobs:
           echo "Successfully deployed version ${{ needs.get-version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "## Artifacts Uploaded" >> $GITHUB_STEP_SUMMARY
           echo "- Backend revision history" >> $GITHUB_STEP_SUMMARY
-          echo "- Firebase deployment history" >> $GITHUB_STEP_SUMMARY
           echo "- Deployment logs" >> $GITHUB_STEP_SUMMARY
