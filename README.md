@@ -43,15 +43,15 @@ Here we will discuss the pipeline I created through custom actions and workflows
 
 ### 1.1.2 `test-backend`
 
-- **Action performed:**
-- **Use in workflows:**
-- **Benefits for pipeline:**
+- **Action performed:** Uses GitHub Secrets as environment variables to run all tests for backend application, with coverage reports optionally triggered by manual workflow dispatch. Preserves all testing reports and uploads as a GitHub Artifact.
+- **Use in workflows:** Used in `pr-test.yml` file, a full testing suite workflow for the application. This workflow is a status check which must pass before PRs are merged to the production branch.
+- **Benefits for pipeline:** Abstracts the testing logic from the workflow file, and centralises testing to a single workflow. This creates a "all tests must pass" security feature for pushes to production branch along with GitHub Rulesets. Testing action can be re-used for any future workflow additions such as for staging environments as needed.
 
 ### 1.1.3 `test-frontend`
 
-- **Action performed:**
-- **Use in workflows:**
-- **Benefits for pipeline:**
+- **Action performed:** Runs all existing tests for the frontend application and preserves all test reports uploaded as a GitHub Artifact.
+- **Use in workflows:** Used in `pr-test.yml` file, a full testing suite for the application. This workflow is a status check which must pass before PRs are merged to the production branch.
+- **Benefits for pipeline:** Abstracts frontend test logic from the workflow file, ensuring consistent execution across the PR workflow. Separates frontend testing concerns while maintaining them as required status checks for production branch protection. Testing action can be re-used for any future workflow additions as above.
 
 ### 1.1.4 `build-push-docker-images`
 
