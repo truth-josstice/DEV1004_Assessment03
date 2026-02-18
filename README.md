@@ -76,6 +76,8 @@ Here we will discuss the pipeline I created through custom actions and workflows
 - **Placement in pipeline:** Runs in parallel with the `PR - Test Suites` workflow, and is a required status check protecting the `main` branch through GitHub Rulesets.
 - **Example diagram:**
 
+![A diagram explaining the flow of each step in the Code Quality workflow](./assets/images/code-quality-diagram.png)
+
 ### 1.2.2 PR - Test Suites
 
 - **When workflow occurs:** Occurs when any PR to `main` branch is: opened, synchronized, re-opened or marked as ready-for-review. Can be manually dispatched with an optional coverage tag.
@@ -83,19 +85,43 @@ Here we will discuss the pipeline I created through custom actions and workflows
 - **Placement in pipeline:** Runs in parallel with `PR - Code Quality` workflow, and is a required status check protecting the `main` branch through GitHub Rulesets.
 - **Example diagram:**
 
+![A diagram explaining the flow of each step in the Testing workflow](./assets/images/test-diagram.png)
+
 ### 1.2.3 Main - Build and Push Images
 
-- **When workflow occurs:**
-- **Workflow performs:**
-- **Placement in pipeline:**
+- **When workflow occurs:** Triggered on push to `main` branch with explicit exceptions for documentation (.md), workflow (.yml) and docs folders changes to avoid unnecessary image rebuilds. Can be manually triggered with manual version tag overrides. Scheduled to run once per week (Sunday 2am) for security rebuilds of container base images.
+- **Workflow performs:** Uses external action `anothrNick/github-tag-action` to generate semantic version tags. Tags are applied in workflow to GitHub Repo tag and passed to subsequent steps. Uses the `build-push-docker-images` custom action to build and push images to Docker Hub. Saves version tags per workflow as `version.txt` to be accessed by `main-cd` workflow.
+- **Placement in pipeline:** Executes after PRs are merged to `main`, must complete successfully before the `main-cd` deployment workflow runs. Ensures Docker Hub images stay consistent with GitHub code and that the most recent version is available for deployment.
 - **Example diagram:**
+
+![A diagram explaining the flow of each step in the Build and Push Images workflow](./assets/images/build-push-diagram.png)
 
 ### 1.2.4 CD - Deploy to Production
 
-- **When workflow occurs:**
+- **When workflow occurs:** Occurs on completed `workflow_run` of `main-build-push` workflow. Exits early if `main-build-push` is not successful.
 - **Workflow performs:**
-- **Placement in pipeline:**
-- **Example diagram:**
+  - **CD - Deployment Version Tag:** Uses `get-version-tag` custom action to download and parse `version.txt` artifact created from `main-build-push` workflow.
+  - **Deploy Production Backend:**
+    - Installs `gcloud` SDK to communicate with Google Cloud Run via CLI commands.
+    - Authenticates to GCP using GitHub Secrets variables injected during workflow.
+    - Uses Docker Hub version matching `tag` output from `get-version-tag` custom action to deploy latest backend image, with three retries to protect against transient failures.
+    - Outputs Cloud Run revision history in `json` and `txt` formats and uploads as artifacts.
+  - **Verify Backend Deployment:**
+    - Waits 10 seconds to ensure backend deployment has time to spin up, uses `curl` to send get request to deployed backend URL.
+  - **Deploy Production Frontend:**
+    - Uses custom action `setup-env` to setup Node.js in frontend environment.
+    - Uses Vite to build static `dist` folder for deployment.
+    - Installs `firebase-tools` globally to CI environment.
+    - Uses Firebase CLI to deploy from `dist` folder.
+  - **Verify Frontend Deployment:**
+    - Waits 10 seconds to ensure frontend deployment has time to spin up, uses `curl` to send request to deployed frontend URL.
+  - **Deployment Summary:**
+    - Saves deployment version, Cloud Run revision ID, and timestamp of deployment, uploads as artifact for persistent history.
+    - Summarises entire workflow as `GITHUB_STEP_SUMMARY`
+- **Placement in pipeline:** Final stage of CI/CD pipeline, running automatically after successful testing and code quality checks in PRs, and after successful completion of the `main-build-push` workflow. Deploys verified images to production, completing the delivery cycle from commit to deployment.
+- **Example screenshot:**
+
+![A screenshot of each step in succession from the GitHub Actions console](./assets/images/main-cd-screenshot.png)
 
 ---
 

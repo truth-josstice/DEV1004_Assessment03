@@ -93,7 +93,7 @@ jobs:
           retention-days: 30
 
   verify-backend:
-    name: Verify Backend Deployment Status
+    name: Verify Backend Deployment
     needs: deploy-backend
     runs-on: ubuntu-latest
     steps:
