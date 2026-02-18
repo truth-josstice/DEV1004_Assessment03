@@ -55,13 +55,13 @@ Here we will discuss the pipeline I created through custom actions and workflows
 
 ### 1.1.4 `build-push-docker-images`
 
-- **Action performed:**
-- **Use in workflows:**
-- **Benefits for pipeline:**
+- **Action performed:** Uses GitHub Secrets to inject dynamic variables. Using the `main` branch as a single source of truth, rebuilding images when changes are made to codebase files while excluding documentation (.md), workflow (.yml) and docs folder changes that don't require image rebuilds. Applies semantic version tagging to ensure consistency across Github releases and Docker images, and supports manual workflow dispatch with optional manual version tagging for flexibility.
+- **Use in workflows:** Used in `main-build-push.yml` file. Semantic version tags are generated in the workflow and applied to the action, version tags are uploaded as artifacts to be shared across other workflows in the pipeline.
+- **Benefits for pipeline:** Abstracts the Docker image build and push logic from the workflow file, ensuring re-usability across the pipeline, and readability of workflow files. The action is setup for a single project, but adding a "image name" input would make this action mono-repo agnostic and re-usable across multiple similar projects.
 
 ### 1.1.5 `get-version-tag`
 
-- **Action performed:**
+- **Action performed:** 
 - **Use in workflows:**
 - **Benefits for pipeline:**
 
