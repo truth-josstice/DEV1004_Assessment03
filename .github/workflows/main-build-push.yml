@@ -36,7 +36,7 @@ jobs:
 
       - name: Generate Version Tag
         id: version
-        if: ${{ github.event.inputs.backend-tag == '' && github.event.inputs.frontend-tag == ''}}
+        if: ${{ github.event.inputs.backend-tag == '' && github.event.inputs.frontend-tag == '' }}
         uses: anothrNick/github-tag-action@1.75.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
 
       - name: Use Manual Tags
         id: manual-tags
-        if: ${{ github.event.inputs.backend-tag != '' || github.event.inputs.frontend-tag != ''}}
+        if: ${{ github.event.inputs.backend-tag != '' || github.event.inputs.frontend-tag != '' }}
         run: |
           TAG="${{ github.event.inputs.backend-tag || github.event.inputs.frontend-tag }}"
           echo "new_tag=$TAG" >> $GITHUB_OUTPUT

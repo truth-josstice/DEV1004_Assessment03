@@ -6,12 +6,6 @@ on:
     workflows: ["Build and Push Images"]
     types: [completed]
     branches: [main]
-  # Set to run on manual trigger for rollbacks
-  workflow_dispatch:
-    inputs:
-      rollback-tag:
-        description: "Tag to rollback to"
-        required: true
 
 permissions:
   contents: read
@@ -21,35 +15,18 @@ jobs:
   get-version:
     name: CD - Deployment Version Tag
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     outputs:
-      tag: ${{ steps.final-tag.outputs.tag }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
 
       - name: Get Version Tag from CI
         id: version
-        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: ./.github/actions/get-version-tag
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
-
-      - name: Use Rollback Tag
-        id: rollback
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: |
-          echo "tag=${{ github.event.inputs.rollback-tag }}" >> $GITHUB_OUTPUT
-          echo "### Rolling back to version: ${{ github.event.inputs.rollback-tag }}" >> $GITHUB_STEP_SUMMARY
-
-      - name: Set Final Tag
-        id: final-tag
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "tag=${{ steps.rollback.outputs.tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${{ steps.version.outputs.tag }}" >> $GITHUB_OUTPUT
-          fi
 
   deploy-backend:
     name: Deploy Production Backend
@@ -120,9 +97,8 @@ jobs:
     needs: deploy-backend
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for deployment  
-        run:
-          sleep 10
+      - name: Wait for deployment
+        run: sleep 10
 
       - name: Verify Backend
         run: |
@@ -154,7 +130,7 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: firebase deploy --only hosting --message "Deploy version ${{ needs.get-version.outputs.tag }}"
-       
+
   verify-frontend:
     name: Verify Frontend Deployment
     needs: deploy-frontend
@@ -186,12 +162,11 @@ jobs:
         with:
           name: deployment-logs-${{ needs.get-version.outputs.tag }}
           path: deployment-logs/
-      
+
       - name: Workflow Summary
         run: |
           echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "Successfully deployed version ${{ needs.get-version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "## Artifacts Uploaded" >> $GITHUB_STEP_SUMMARY
           echo "- Backend revision history" >> $GITHUB_STEP_SUMMARY
-          echo "- Firebase deployment history" >> $GITHUB_STEP_SUMMARY
           echo "- Deployment logs" >> $GITHUB_STEP_SUMMARY
