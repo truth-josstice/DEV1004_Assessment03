@@ -43,7 +43,7 @@ Here we will discuss the pipeline I created through custom actions and workflows
 
 ### 1.1.2 `test-backend`
 
-- **Action performed:** Uses GitHub Secrets as environment variables to run all tests for backend application, with coverage reports optionally triggered by manual workflow dispatch. Preserves all testing reports and uploads as a GitHub Artifact.
+- **Action performed:** Uses GitHub Secrets injected as environment variables to run all tests for backend application, with coverage reports optionally triggered by manual workflow dispatch. Preserves all testing reports and uploads as a GitHub Artifact.
 - **Use in workflows:** Used in `pr-test.yml` file, a full testing suite workflow for the application. This workflow is a status check which must pass before PRs are merged to the production branch.
 - **Benefits for pipeline:** Abstracts the testing logic from the workflow file, and centralises testing to a single workflow. This creates a "all tests must pass" security feature for pushes to production branch along with GitHub Rulesets. Testing action can be re-used for any future workflow additions such as for staging environments as needed.
 
@@ -55,15 +55,15 @@ Here we will discuss the pipeline I created through custom actions and workflows
 
 ### 1.1.4 `build-push-docker-images`
 
-- **Action performed:** Uses GitHub Secrets to inject dynamic variables. Using the `main` branch as a single source of truth, rebuilding images when changes are made to codebase files while excluding documentation (.md), workflow (.yml) and docs folder changes that don't require image rebuilds. Applies semantic version tagging to ensure consistency across Github releases and Docker images, and supports manual workflow dispatch with optional manual version tagging for flexibility.
+- **Action performed:** Uses GitHub Secrets to inject dynamic variables. Using the `main` branch as a single source of truth, it rebuilds images when changes are made to codebase files while excluding documentation (.md), workflow (.yml) and docs folder changes that don't require image rebuilds. Applies semantic version tagging to ensure consistency across Github releases and Docker images, and supports manual workflow dispatch with optional manual version tagging for flexibility.
 - **Use in workflows:** Used in `main-build-push.yml` file. Semantic version tags are generated in the workflow and applied to the action, version tags are uploaded as artifacts to be shared across other workflows in the pipeline.
 - **Benefits for pipeline:** Abstracts the Docker image build and push logic from the workflow file, ensuring re-usability across the pipeline, and readability of workflow files. The action is setup for a single project, but adding a "image name" input would make this action mono-repo agnostic and re-usable across multiple similar projects.
 
 ### 1.1.5 `get-version-tag`
 
-- **Action performed:** 
-- **Use in workflows:**
-- **Benefits for pipeline:**
+- **Action performed:** Downloads and parses version tag artifact from `main-build-push.yml` using the `workflow_run` ID, and outputs it for deployment versioning.
+- **Use in workflows:** Used in `main-cd.yml` to retrieve and assign the most recent version tags for deployment. Does not overwrite internal version ID, but allows for visual version tracking.
+- **Benefits for pipeline:** Consistency of version tagging across container registry (Docker Hub) and deployment platforms, providing clear traceability between builds and deployment.
 
 ---
 
@@ -71,11 +71,31 @@ Here we will discuss the pipeline I created through custom actions and workflows
 
 ### 1.2.1 PR - Code Quality
 
+- **When workflow occurs:** Occurs when any PR to `main` branch is: opened, synchronized, re-opened or marked as ready-for-review.
+- **Workflow performs:** Runs ESLint and Prettier checks, using associated config files for reference per directory. Performs a spell-check on all files except expected binary data (.png etc) with inline comments generated for clarity.
+- **Placement in pipeline:** Runs in parallel with the `PR - Test Suites` workflow, and is a required status check protecting the `main` branch through GitHub Rulesets.
+- **Example diagram:**
+
 ### 1.2.2 PR - Test Suites
+
+- **When workflow occurs:** Occurs when any PR to `main` branch is: opened, synchronized, re-opened or marked as ready-for-review. Can be manually dispatched with an optional coverage tag.
+- **Workflow performs:** Executes full test suites on both backend (Jest) and frontend (Vitest) codebases. Backend tests can optionally generate a coverage report when manually dispatched with the `run-coverage` input. All test results are preserved via the `test-backend` and `test-frontend` custom actions.
+- **Placement in pipeline:** Runs in parallel with `PR - Code Quality` workflow, and is a required status check protecting the `main` branch through GitHub Rulesets.
+- **Example diagram:**
 
 ### 1.2.3 Main - Build and Push Images
 
+- **When workflow occurs:**
+- **Workflow performs:**
+- **Placement in pipeline:**
+- **Example diagram:**
+
 ### 1.2.4 CD - Deploy to Production
+
+- **When workflow occurs:**
+- **Workflow performs:**
+- **Placement in pipeline:**
+- **Example diagram:**
 
 ---
 
