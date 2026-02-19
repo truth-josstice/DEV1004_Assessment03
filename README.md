@@ -20,8 +20,7 @@
   - [Docker Hub](#23-docker-hub)
   - [Google Cloud Run](#24-google-cloud-run)
   - [Firebase Hosting](#25-firebase-hosting)
-  - [CLI's & SDKs](#26-cli-tools--sdks)
-  - [Supporting Infrastructure Services](#27-supporting-infrastructure-services)
+  - [Supporting Infrastructure Services](#26-supporting-infrastructure-services)
 
 ## 1. The Pipeline: Actions and Workflows
 
@@ -129,19 +128,68 @@ Here we will discuss the pipeline I created through custom actions and workflows
 
 ### 2.1 GitHub Actions
 
-- What does it do
-- Why it was chosen
-- How it's integrated
-- Key features used
+- **Purpose of technology:** GitHub Actions is the service which executes the entirety of the CI/CD workflows and actions included in this assessment. It provides a runtime environment for every pipeline step, and integrated secret management through GitHub Secrets.
+- **Why it was chosen:** GitHub Actions is integrated with GitHub, allowing for expedited development schedules without the need for external services. Workflows can be created and managed in the application repo, and automatically discovered and integrated by GitHub Actions. GitHub Actions marketplace offers free and transparent custom actions for common patterns and requirements for projects. Due to the large use of GitHub for repository management, there is large community support, meaning the learning curve of creating CI/CD pipelines is well supported across all levels. GitHub Actions can be cost prohibitive at enterprise level, but for small or solo programming projects like this one it is perfect.
+- **How it's integrated:** GitHub Actions executes all custom actions and workflows defined in the application's `.github` folder. It authenticates with Docker Hub, MongoDB, Google Cloud and Firebase via GitHub Secrets, triggers code quality status checks (`pr-quality.yml`, `pr-test.yml`), triggers build and deployment of code on pushes to the production branch (`main-build-push.yml`, `main-cd.yml`), and orchestrates every step of the CI/CD pipeline from commit to deployment. GitHub Actions automatically detects any workflow files in the `.github` folder of this application, and provides runtime environments for every pipeline step.
+- **Key features used:**
+  - **GitHub Hosted runners:**
+  - **Workflow automation:**
+  - **Custom triggers:**
+  - Status checks:
+  - Artifact management:
+  - Step summaries:
+  - Secrets management:
+- **Comparison to other technology:**
+  - **Jenkins:** Jenkins offers a plugin-based CI/CD automation server with extensive customisation features. It is platform-agnostic, giving developers greater control over hybrid environments without being as closely tied to GitHub. While it integrates well with GitHub and other version control services for self-hosted and cloud-native setups, it requires more manual setup and configuration. This makes it more appropriate for complicated or legacy systems requiring more active management, but adds unnecessary expenditure and developer debt for a GitHub native project like this one.
+  - **RunsOn:** RunsOn is a newer entry into the CI/CD space, offering a self hosting platform completely through AWS. Cost reductions for large business can be significant, and performance benefits are achievable through the variety of AWS instance types available - allowing each action to run on the most appropriate infrastructure. Operational Expenditure (OpEx) is a key consideration, as RunsOn currently offers no free tiers for small teams. Migration from GitHub actions is straightforward, requiring only a small change to the `runs-on` field with no workflow code changes needed. RunsOn manages Kubernetes, and uses no third parties, meaning codebase is exposed only to the AWS console. This is a strong choice for enterprise or larger developer teams, but a weaker offering when it comes to small or solo projects.
 
 ### 2.2 Docker
 
+- **Purpose of technology:** Docker is a widely used industry standard containerisation service, offering simple container customisation and build through `Dockerfile` code, and local multi-containerisation through `docker-compose`. Docker essentially refers to a collection of available services: Docker Desktop, Docker Hub, Docker runtime environments, and Docker Swarm. Docker is used in this application to create portable images of frontend and backend services, provide daemon-based runtime environments for local development. In this pipeline only the backend image is deployed to production, the frontend image is available for deployment if decided in the future, and maintains local development consistency via `docker-compose`.
+- **Why it was chosen:** Alternatives are available for every service within Docker, but for junior developers and small projects (especially Single Page Applications like this one), Docker offers a strongly supported collection of services with low developer debt, and a strong representation of native actions through the GitHub Actions marketplace. Docker was chosen for this project to containerise existing application code with simple `Dockerfile` and `docker-compose` files ensuring local dev environments are ultra portable. I used Docker due to its low learning curve, and simple troubleshooting. It also meant I could keep my platform fragmentation to a minimum and focus on the CI/CD aspects of the assessment.
+- **How it's integrated:** Images of application code on the production branch are built via defined `Dockerfile` code, either on push to `main` or via manual `workflow_dispatch` triggers (`main-build-push.yml`). These images are version tagged based on trigger type - automatic for push and with optional manual tagging on `workflow_dispatch` - and pushed to the Docker Hub container registry. Local development is made portable through `docker-compose` settings bridging the frontend and backend services, communicating with MongoDB's Cloud Atlas database service.
+- **Key features used:**
+  - **Dockerfile:** Custom container environment definitions for both backend (Node.js) and frontend (Vite - Nginx) services.
+  - **`docker-compose`:** Local bridging orchestration connecting frontend, backend and MongoDB Atlas for portable development.
+  - **Docker CLI:** Build, tag, push commands used in workflows.
+  - **Layer Caching:** Optimized build times leveraging cached layers during CI/CD builds.
+- **Comparison to other technology:** _This section will compare purely based on image build and run features of Docker._
+  - **Podman:** Podman offers a service similar to Docker, supporting build, runtime, management and orchestration of container images. It is compatible with `Dockerfile` code, and runs in a daemonless, rootless architecture for improved security and lower resource usage. Podman can be less suited to complex containers and orchestration. A migration to Podman from Docker would be good to explore for simple containers, however I chose Docker due to its existing ecosystem and support, and due to the orchestration requirements of my multi-container application.
+  - **Buildah:** Buildah is a specialized container image building tool, operating without requiring a Docker daemon process, making it flexible to CI/CD environments with security constraints. It installs natively on Linux distributions, offering Dockerfile-based builds with granular layer control, and supports rootless execution to reduce attack surface. Despite the security advantages, I chose Docker for this project due to native GitHub Actions integration, tolerance for privileged access in my CI/CD environment, and convenient Docker Hub registry integration.
+
 ### 2.3 Docker Hub
+
+- **Purpose of technology:**
+- **Why it was chosen:**
+- **How it's integrated:**
+- **Key features used:**
+- **Comparison to other technology:**
+  - **Comparison 1:**
+  - **Comparison 2:**
 
 ### 2.4 Google Cloud Run
 
+- **Purpose of technology:**
+- **Why it was chosen:**
+- **How it's integrated:**
+- **Key features used:**
+- **Comparison to other technology:**
+  - **Comparison 1:**
+  - **Comparison 2:**
+
 ### 2.5 Firebase Hosting
 
-### 2.6 CLI Tools & SDKs
+- **Purpose of technology:**
+- **Why it was chosen:**
+- **How it's integrated:**
+- **Key features used:**
+- **Comparison to other technology:**
+  - **Comparison 1:**
+  - **Comparison 2:**
 
-### 2.7 Supporting Infrastructure Services
+### 2.6 Supporting Infrastructure Services
+
+| Service                      | Purpose                                                | Integration                                                                   |
+| ---------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Google Cloud Secrets Manager | Stores production DATABASE_URI and JWT_SECRET_KEY      | Mounted at runtime via `--update-secrets` flag to most recent secret value    |
+| Google Cloud IAM             | Manages service account permissions and authentication | Server account key stored in GitHub secrets with minimum required permissions |
