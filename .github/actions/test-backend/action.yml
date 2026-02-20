@@ -23,7 +23,7 @@ runs:
           --testTimeout=30000 --silent 2>&1 | tee test-results/standard-output.log
           
 
-    - name: Run Integration Tests (Optional - Can Fail)
+    - name: Run Integration Tests
       shell: bash
       continue-on-error: true
       run: |
