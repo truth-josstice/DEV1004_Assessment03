@@ -76,6 +76,7 @@ Here we will discuss the pipeline I created through custom actions and workflows
 - **Example diagram:**
 
 ![A diagram explaining the flow of each step in the Code Quality workflow](./assets/images/code-quality-diagram.png)
+_**Figure 1:** PR Code Quality workflow showing ESLint, Prettier and Spell Check stages_
 
 ### 1.2.2 PR - Test Suites
 
@@ -85,6 +86,7 @@ Here we will discuss the pipeline I created through custom actions and workflows
 - **Example diagram:**
 
 ![A diagram explaining the flow of each step in the Testing workflow](./assets/images/test-diagram.png)
+_**Figure 2:** PR Test Suites workflow with parallel backend/frontend test execution_
 
 ### 1.2.3 Main - Build and Push Images
 
@@ -94,6 +96,7 @@ Here we will discuss the pipeline I created through custom actions and workflows
 - **Example diagram:**
 
 ![A diagram explaining the flow of each step in the Build and Push Images workflow](./assets/images/build-push-diagram.png)
+_**Figure 3:** Main branch build workflow showing version tagging and image push to Docker Hub_
 
 ### 1.2.4 CD - Deploy to Production
 
@@ -122,6 +125,7 @@ Here we will discuss the pipeline I created through custom actions and workflows
 - **Example screenshot:**
 
 ![A screenshot of each step in succession from the GitHub Actions console](./assets/images/main-cd-screenshot.png)
+_**Figure 4:** Successful CD deployment workflow showing backend and frontend deployment and verification stages_
 
 ---
 
@@ -144,6 +148,9 @@ Here we will discuss the pipeline I created through custom actions and workflows
   - **Jenkins:** Jenkins offers a plugin-based CI/CD automation server with extensive customisation features. It is platform-agnostic, giving developers greater control over hybrid environments without being as closely tied to GitHub. While Jenkins integrates well with GitHub and other version control services for self-hosted and cloud-native setups, it requires more manual configuration. This makes it more appropriate for complicated or legacy systems requiring active management, but adds unnecessary complexity and developer debt for a GitHub native project like this one.
   - **RunsOn:** RunsOn is a newer entry into the CI/CD space, offering a self hosting platform completely through AWS. Cost reductions for large business can be significant, and performance benefits are achievable through the variety of AWS instance types available - allowing each action to run on the most appropriate infrastructure. Operational Expenditure (OpEx) is a key consideration, as RunsOn currently offers no free tiers for small teams. Migration from GitHub actions is straightforward, requiring only a small change to the `runs-on` field with no workflow code changes needed. RunsOn manages Kubernetes, and uses no third parties, meaning codebase is exposed only to the AWS console. This is a strong choice for enterprise or larger developer teams, but a weaker offering when it comes to small or solo projects.
 
+![A diagram showing comparisons between the three platforms: GitHub Actions, Jenkins and RunsOn](./assets/images/Section%202.1.png)
+_**Figure 5:** GitHub Actions v Jenkins v RunsOn - key points of difference_
+
 ### 2.2 Docker
 
 - **Purpose of technology:** Docker is a widely used industry standard containerisation service, offering simple container customisation and build through `Dockerfile` code, and local multi-containerisation through `docker-compose`. Docker essentially refers to a collection of available services: Docker Desktop, Docker Hub, Docker runtime environments, and Docker Swarm. Docker is used in this application to create portable images of frontend and backend services and provide daemon-based runtime environments for local development. In this pipeline only the backend image is deployed to production, the frontend image is available for deployment if decided in the future, and maintains local development consistency via `docker-compose`.
@@ -158,6 +165,9 @@ Here we will discuss the pipeline I created through custom actions and workflows
   - **Podman:** Podman offers a service similar to Docker, supporting build, runtime, management and orchestration of container images. It is compatible with `Dockerfile` code, and runs in a daemonless, rootless architecture for improved security and lower resource usage. Podman can be less suited to complex containers and orchestration. A migration to Podman from Docker would be good to explore for simple containers, however I chose Docker due to its existing ecosystem and support, and due to the orchestration requirements of my multi-container application.
   - **Buildah:** Buildah is a specialized container image building tool, operating without requiring a Docker daemon process, making it flexible to CI/CD environments with security constraints. It installs natively on Linux distributions, offering Dockerfile-based builds with granular layer control, and supports rootless execution to reduce attack surface. Despite the security advantages, I chose Docker for this project due to native GitHub Actions integration, tolerance for privileged access in my CI/CD environment, and convenient Docker Hub registry integration.
 
+![A diagram showing comparisons between the three platforms mentioned: Docker, Podman and Buildah](./assets/images/Section%202.2.png)
+_**Figure 7:** Docker v Podman v Buildah - key points of difference_
+
 ### 2.3 Docker Hub
 
 - **Purpose of technology:** Docker Hub is a cloud-based container registry service that stores and manages Docker images both privately and publicly, enabling version control, sharing and distribution of containerized applications/services. In this pipeline, Docker Hub stores built images and serves as the source that Google Cloud Run pulls from to deploy the production backend. It also houses both service images for portable local dev environments.
@@ -170,6 +180,9 @@ Here we will discuss the pipeline I created through custom actions and workflows
 - **Comparison to other technology:**
   - **GitHub Container Registry (GHCR):** GHCR offers similar image storage and management services to Docker Hub and is tightly integrated with GitHub Actions, with more generous free-tier limits on pulls and image retention. It provides granular access control on a per-image basis, ideal for private internal applications for enterprise level applications. For this assessment, Docker Hub offers appropriately accessible storage for a public application, widespread community adoption and support, lower developer debt for any potential future tech changes, and prevents platform lock-in.
   - **AWS Elastic Container Registry (ECR):** AWS ECR is a secure, privacy focused image storage service operating on AWS infrastructure. It is tightly integrated with other AWS services, and offers granular and robust access control through AWS IAM. AWS offers integrated vulnerability assessments, immutable tags, and flexible lifecycle policies for enhanced security. Its pay-per-use model offers competitive free tiers for public images with predictable usage patterns. As the name suggests, scaling is on-demand and elastic. AWS is a huge ecosystem, with high levels of industry use at the enterprise level. I chose Docker Hub for this project due to its low learning curve and developer-friendly console (developer first design is important when you'll use it widely), reducing developer debt and avoiding complexity for a small open-source project.
+
+![A diagram showing comparisons between the three platforms mentioned: Docker Hub, GHCR and AWS ECR](./assets/images/Section%202.3.png)
+_**Figure 8:** Docker Hub v GHCR v AWS ECR - key points of difference_
 
 ### 2.4 Google Cloud Run
 
@@ -188,6 +201,9 @@ Here we will discuss the pipeline I created through custom actions and workflows
   - **AWS EC2:** AWS EC2 is a service within the larger AWS ecosystem that provides manually configured infrastructure for container instances - giving developers control over operating system, network config, security settings and runtime environment. It offers a wide range of instance types optimized for different memory and compute requirements, with dedicated config leading to higher resource efficiency. EC2 provides consistent, long-running deployment for applications expecting constant and predictable traffic. For this project, with an expectation of low resource requirements and traffic, it was unnecessarily complex to configure AWS. The AWS console also introduces developer friction with its steep learning curve. Choosing Cloud Run kept setup simple, with the option to integrate more advanced features with future deployments.
   - **Render:** Render is a simple to use and popular cloud service, with default continuous deployment through direct integration with GitHub Repositories. It has generous free tiers for small teams and solo projects, whilst offering simple customisation of resource management. Render is capable of deployment via containers, and can be integrated with GitHub Actions through native custom actions. Before containerisation this application's backend service was deployed via Render, but the free option spins completely down when idle. I chose Cloud Run for my CI/CD Pipeline because it scales to zero, but spins up in seconds for low resource containers, and also offers more customised setup across the board - giving developers granular resource control, load balancing options, volume mounts where required, and integration with the wider GCP ecosystem.
 
+![A diagram showing comparisons between the three platforms mentioned: Google Cloud Run, AWS EC2 and Render](./assets/images/Section%202.4.png)
+_**Figure 9:** Google Cloud Run v AWS EC2 v Render - key points of difference_
+
 ### 2.5 Firebase Hosting
 
 - **Purpose of technology:** Firebase Hosting is a static web hosting service that deploys frontend applications from build output folders or basic HTML files. It provides global CDN delivery, custom domain support and automatic SSL certification - all with a generous free tier ideal for small teams and solo projects.
@@ -195,6 +211,7 @@ Here we will discuss the pipeline I created through custom actions and workflows
 - **How it's integrated:** Firebase CLI uses the applications build command `npm run build` to build a static deployment folder, and uses a simple one line command `firebase deploy --only hosting` to publicly deploy the frontend service. It also attaches a message with the semantic version tags created in the `main-build-push` workflow for visual version tracking through its own console, pictured below:
 
 ![A screenshot of this applications frontend service deployment history in the Firebase console](./assets/images/Firebase%20Deployment%20History.png)
+_**Figure 10:** Firebase Hosting console showing deployment history with semantic tagging_
 
 - **Key features used:**
   - **Firebase CLI:** Deploys the frontend service with one line of code.
@@ -203,6 +220,9 @@ Here we will discuss the pipeline I created through custom actions and workflows
 - **Comparison to other technology:**
   - **Netlify:** The go-to standard for simple frontend services, Netlify offers a similar platform to Firebase. It is easy to use, free to use for most small projects, and has little to no learning curve from sign-up to deployment. With some experience in Netlify already, I decided to use a different service here to expand my knowledge and skills regarding frontend deployment.
   - **Google Cloud Run:** Google Cloud Run offers containerised frontend service deployment, which was something I considered initially for this project. For a more complicated frontend service, this may be appropriate, but as my frontend containerisation was executed more for local development portability, it was again complex for complexity's sake. While the frontend Docker image is still built and stored in Docker Hub for development consistency and future deployment flexibility, deploying the static files directly to Firebase Hosting proved simpler and more appropriate for production.
+
+![A diagram showing comparisons between the three platforms mentioned: Firebase Hosting, Netlify and Google Cloud Run](./assets/images/Section%202.5.png)
+_**Figure 11:** Firebase Hosting v Netlify v Google Cloud Run - key points of difference_
 
 ### 2.6 Supporting Infrastructure Services
 
