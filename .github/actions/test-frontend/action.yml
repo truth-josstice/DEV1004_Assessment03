@@ -12,7 +12,7 @@ runs:
       continue-on-error: true
       run: |
         cd frontend
-        npx vitest run --reporter=json --outputFile=test-results/frontend-results.json 2>&1 | tee test-results/frontend-output.log
+        npx vitest run --reporter=json --outputFile=test-results/frontend-results.json
 
     - name: Upload Frontend Results
       if: always()
