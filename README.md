@@ -210,7 +210,7 @@ _**Figure 9:** Google Cloud Run v AWS EC2 v Render - key points of difference_
 - **Why it was chosen:** Firebase is incredibly simple to setup, and its CLI deploys with a simple one line command. For a Single Page Application with no server-side rendering requirements, a simple static hosting service was more appropriate than containerised or complex deployment methods. The expected low traffic and minimal resource needs meant complex or granularly controlled frontend solutions would be complex for the sake of complexity. Firebase's generous free tier and straightforward GitHub Actions integration also aligned with the focus on keeping developer debt low.
 - **How it's integrated:** Firebase CLI uses the applications build command `npm run build` to build a static deployment folder, and uses a simple one line command `firebase deploy --only hosting` to publicly deploy the frontend service. It also attaches a message with the semantic version tags created in the `main-build-push` workflow for visual version tracking through its own console, pictured below:
 
-![A screenshot of this applications frontend service deployment history in the Firebase console](./assets/images/Firebase%20Deployment%20History.png)
+![A screenshot of this applications frontend service deployment history in the Firebase console](./assets/images/Firebase%20Deployment%20History.png)  
 _**Figure 10:** Firebase Hosting console showing deployment history with semantic tagging_
 
 - **Key features used:**
