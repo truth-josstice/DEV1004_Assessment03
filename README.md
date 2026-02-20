@@ -161,7 +161,7 @@ Here we will discuss the pipeline I created through custom actions and workflows
 
 - **Purpose of technology:** Docker Hub is a cloud-based container registry service that stores and manages Docker images both privately and publicly, enabling version control, sharing and distribution of containerized applications/services. In this pipeline, Docker Hub is used to store built images, and as the source Google Cloud Run pulls from to deploy the production backend. It also houses both service images for portable local dev environments.
 - **Why it was chosen:** Docker Hub and Docker are closely tied, offering seamless integration via either CLI commands or the Docker Desktop GUI. Hosting a small number of containers - such as the two needed for this full stack application - is free, with minimal concerns for storage or traffic limits for a project of this size. Dedicated actions on the GitHub Actions marketplace make pushing to the registry simple, and the large community of developers using Docker Hub ensures straightforward troubleshooting. Docker Hub is fit-for-purpose.
-- **How it's integrated:** Custom actions push built images to Docker Hub with semantic version tags (`main-build-push.yml`), and the backend service  is pulled from Docker Hub during Cloud Run deployment (`main-cd.yml`).
+- **How it's integrated:** Custom actions push built images to Docker Hub with semantic version tags (`main-build-push.yml`), and the backend service is pulled from Docker Hub during Cloud Run deployment (`main-cd.yml`).
 - **Key features used:**
   - **Container storage:** Stores both backend and frontend images in a centralized repository with semantic version tagging.
   - **Image management:** Automatic security scanning and publicly accessible repository settings.
@@ -172,27 +172,41 @@ Here we will discuss the pipeline I created through custom actions and workflows
 
 ### 2.4 Google Cloud Run
 
-- **Purpose of technology:**
-- **Why it was chosen:**
-- **How it's integrated:**
+- **Purpose of technology:** Google Cloud Run is a serverless container deployment service within the Google Cloud ecosystem. It automatically scales based on traffic - scaling to zero when idle - with optional resource limits. Designed for simplicity and speed, it supports any programming language, and minimizes operational overhead.
+- **Why it was chosen:** For this application, a simpler cloud service was ideal. With expected traffic and resource requirements for the backend being minimal, Cloud Run eliminated the need for infrastructure management. Its SDKs are straightforward to learn and support custom automated deployment, and native GitHub Actions integrations make authentication simple through IAM credentials. It also offered a complete solution for a containerised frontend and backend service for any potential changes to future deployments. Finally, and a large part of the decision, the Google Cloud console is developer-friendly, reducing developer debt compared to more complex alternatives.
+- **How it's integrated:** Cloud Run pulls the backend image (built and version tagged during `main-build-push` workflow) from Docker Hub (`main-cd.yml`), and deploys to a publicly available URL. Sensitive variables are injected via Google Cloud Secrets Manager, with IAM credentials injected through GitHub Secrets. Cloud Run also provides revision history to the workflow, which is uploaded as an artifact for persistent storage.
 - **Key features used:**
+  - **gcloud SDK:** Simple CLI with customisable flags for flexible deployment.
+  - **Automatic scaling:** Scales to zero when idle, with a maximum single implemented instance for this application (expected demand is low, no bill shock).
+  - **Revision history:** Automatically tracks deployment revisions, accessible through Cloud Run console and CLI commands and stored as artifacts.
+  - **Serverless execution:** Cloud Run manages infrastructure, patching and runtime environments.
+  - **Secrets integration:** Native injection of Google Cloud Secrets Manager via the `--update-secrets` flag, ensuring latest production variables are used and secrets remain dynamic.
+  - **HTTPS endpoints:** Automatically provisions managed SSL certificates, and provides a public HTTPS URL.
+  - **Concurrent request handling:** Container instances are able to handle multiple simultaneous requests if required.
 - **Comparison to other technology:**
-  - **Comparison 1:**
-  - **Comparison 2:**
+  - **AWS EC2:** AWS EC2 is a service within the larger AWS ecosystem that provides manually configured infrastructure for container instances - giving developers control over operating system, network config, security settings and runtime environment. It offers a wide range of instance types optimized for different memory and compute requirements, with dedicated config leading to higher resource efficiency. EC2 provides consistent, long-running deployment for applications expecting constant and predictable traffic. For this project, with an expectation of low resource requirements and traffic, it was unnecessarily complex to configure AWS. The AWS console also introduces developer friction with its steep learning curve. Choosing Cloud Run kept setup simple, with the option to integrate more advanced features with future deployments.
+  - **Render:** Render is a simple to use and popular cloud service, with default continuous deployment through direct integration with GitHub Repositories. It has generous free tiers for small teams and solo projects, whilst offering simple customisation for resource management. Render is capable of deployment via containers, and can be integrated with GitHub Actions through native custom actions. Before containerisation this application's backend service was deployed via Render, but the free option spins completely down when idle. I chose Cloud Run for my CI/CD Pipeline because it scales to zero, but spins up in seconds for low resource containers, and also offers more customised setup across the board - giving developers granular resource control, load balancing options, volume mounts where required, and integration with the wider GCP ecosystem.
 
 ### 2.5 Firebase Hosting
 
-- **Purpose of technology:**
-- **Why it was chosen:**
-- **How it's integrated:**
+- **Purpose of technology:** Firebase Hosting is a static web hosting service that deploys frontend applications from build output folders or basic HTML files. It provides global CDN delivery, custom domain support and automatic SSL certification - all with a generous free tier ideal for small teams and solo projects.
+- **Why it was chosen:** Firebase is incredibly simple to setup, and its CLI deploys with a simple one line command. For a Single Page Application with no server-side rendering requirements, a simple static hosting service was more appropriate than containerised or complex deployment methods. The expected low traffic and minimal resource needs meant complex or granularly controlled frontend solutions would be complex for the sake of complexity. Firebase's generous free tier and straightforward GitHub Actions integration also aligned with the focus on keeping developer debt low.
+- **How it's integrated:** Firebase CLI uses the applications build command `npm run build` to build a static deployment folder, and uses a simple one line command `firebase deploy --only hosting` to publicly deploy the frontend service. It also attaches a message with the semantic version tags created in the `main-build-push` workflow for visual version tracking through its own console, pictured below:
+
+![A screenshot of this applications frontend service deployment history in the Firebase console](./assets/images/Firebase%20Deployment%20History.png)
+
 - **Key features used:**
+  - **Firebase CLI:** Deploys the frontend service with one line of code.
+  - **Firebase console deployment history:** Persistently stores previous deployment history for emergency rollback.
+  - **HTTPS routing:** Automatically provisions managed SSL certificates, and provides a public HTTPS URL.
 - **Comparison to other technology:**
-  - **Comparison 1:**
-  - **Comparison 2:**
+  - **Netlify:** The go-to standard for simple frontend services, Netlify offers a similar platform to Firebase. It is easy to use, free to use for most small projects, and has little to no learning curve from sign-up to deployment. With some experience in Netlify already, I decided to use a different service here to expand my knowledge and skills in regards to frontend deployment.
+  - **Google Cloud Run:** Google Cloud Run offers containerised frontend service deployment, which was something I considered initially for this project. For a more complicated frontend service, this may be appropriate, but as my frontend containerisation was executed more for local development portability, it was again complex for complexity's sake. As my frontend container uses Nginx to serve its static build files, configuration to maintain a single Dockerfile and config for both production and dev environments created friction, and was ultimately not necessary for the scale of this application. Ultimately I chose Firebase due to its simplicity and its fit for purpose.
 
 ### 2.6 Supporting Infrastructure Services
 
-| Service                      | Purpose                                                | Integration                                                                   |
-| ---------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| Google Cloud Secrets Manager | Stores production DATABASE_URI and JWT_SECRET_KEY      | Mounted at runtime via `--update-secrets` flag to most recent secret value    |
-| Google Cloud IAM             | Manages service account permissions and authentication | Server account key stored in GitHub secrets with minimum required permissions |
+| Service                      | Purpose                                                                      | Integration                                                                   |
+| ---------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Google Cloud Secrets Manager | Stores production DATABASE_URI and JWT_SECRET_KEY                            | Mounted at runtime via `--update-secrets` flag to most recent secret value    |
+| Google Cloud IAM             | Manages service account permissions and authentication                       | Server account key stored in GitHub secrets with minimum required permissions |
+| MongoDB Cloud Atlas          | Externally deploys the production database, with minimal management required | DATABASE_URI injected during runtime through GitHub secrets                   |
