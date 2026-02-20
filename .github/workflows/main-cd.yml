@@ -58,6 +58,7 @@ jobs:
               --region=us-west1 \
               --allow-unauthenticated \
               --memory=256Mi \
+              --max-instances=3 \
               --update-secrets="DATABASE_URI=DATABASE_URI:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest" \
               --format='json' > deploy-output.json; then
               echo "Deployment successful!"
